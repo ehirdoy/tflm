@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <stdio.h>
+
 #include "tensorflow/lite/experimental/micro/examples/hello_world/constants.h"
 #include "tensorflow/lite/experimental/micro/examples/hello_world/output_handler.h"
 #include "tensorflow/lite/experimental/micro/examples/hello_world/sine_model_data.h"
@@ -34,7 +36,7 @@ static void dump_tensor(TfLiteTensor *input)
            input->dims->data[0], input->dims->data[1], input->dims->data[2]);
 }
 
-int main(int argc, char* argv[]) {
+int _main(int argc, char* argv[]) {
   // Set up logging
   tflite::MicroErrorReporter micro_error_reporter;
   tflite::ErrorReporter* error_reporter = &micro_error_reporter;
@@ -117,3 +119,9 @@ int main(int argc, char* argv[]) {
     if (inference_count >= kInferencesPerCycle) inference_count = 0;
   }
 }
+
+#ifdef ESP_PLATFORM
+extern "C" void tflm(void) {_main(0, NULL);}
+#else
+int main(int argc, char* argv[]) {_main(0, NULL);}
+#endif
