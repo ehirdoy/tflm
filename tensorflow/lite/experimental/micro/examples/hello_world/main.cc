@@ -22,6 +22,18 @@ limitations under the License.
 #include "tensorflow/lite/schema/schema_generated.h"
 #include "tensorflow/lite/version.h"
 
+#include "input_data.h" // digit '7' bitmap
+
+extern const unsigned char mnist_model_tflite[];
+
+static void dump_tensor(TfLiteTensor *input)
+{
+    printf("%s: TfLiteType=%s %zu\n",
+           input->name, TfLiteTypeGetName(input->type), input->bytes);
+    printf("dim[%d]: %d %d %d\n", input->dims->size,
+           input->dims->data[0], input->dims->data[1], input->dims->data[2]);
+}
+
 int main(int argc, char* argv[]) {
   // Set up logging
   tflite::MicroErrorReporter micro_error_reporter;
@@ -29,7 +41,7 @@ int main(int argc, char* argv[]) {
 
   // Map the model into a usable data structure. This doesn't involve any
   // copying or parsing, it's a very lightweight operation.
-  const tflite::Model* model = ::tflite::GetModel(g_sine_model_data);
+  const tflite::Model* model = ::tflite::GetModel(mnist_model_tflite);
   if (model->version() != TFLITE_SCHEMA_VERSION) {
     error_reporter->Report(
         "Model provided is schema version %d not equal "
@@ -43,7 +55,7 @@ int main(int argc, char* argv[]) {
 
   // Create an area of memory to use for input, output, and intermediate arrays.
   // Finding the minimum value for your model may require some trial and error.
-  const int tensor_arena_size = 2 * 1024;
+  const int tensor_arena_size = 6 * 1024;
   uint8_t tensor_arena[tensor_arena_size];
 
   // Build an interpreter to run the model with
@@ -56,6 +68,8 @@ int main(int argc, char* argv[]) {
   // Obtain pointers to the model's input and output tensors
   TfLiteTensor* input = interpreter.input(0);
   TfLiteTensor* output = interpreter.output(0);
+  dump_tensor(input);
+  dump_tensor(output);
 
   // Keep track of how many inferences we have performed
   int inference_count = 0;
@@ -73,6 +87,12 @@ int main(int argc, char* argv[]) {
     // Place our calculated x value in the model's input tensor
     input->data.f[0] = x_val;
 
+    for (int i = 0; i < (28 * 28); i++) {
+      input->data.f[i] = input_data[i];
+      // dump bitmap
+      printf("%s%s", (input_data[i] ? "." : " "), ((i % 28) == 27 ? "\n" : ""));
+    }
+
     // Run inference, and report any error
     TfLiteStatus invoke_status = interpreter.Invoke();
     if (invoke_status != kTfLiteOk) {
@@ -81,6 +101,9 @@ int main(int argc, char* argv[]) {
       continue;
     }
 
+    for (int i = 0; i < 10; i++)
+      printf("%d: %f\n", i, output->data.f[i]);
+    return 0;
     // Read the predicted y value from the model's output tensor
     float y_val = output->data.f[0];
 
