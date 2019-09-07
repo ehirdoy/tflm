@@ -20,6 +20,6 @@ model.evaluate(test_images, test_labels)
 
 converter = tf.lite.TFLiteConverter.from_keras_model(model)
 converter.optimizations = [tf.lite.Optimize.OPTIMIZE_FOR_SIZE] # tf.lite.Optimize.{DEFAULT,OPTIMIZE_FOR_SIZE,OPTIMIZE_FOR_LATENCY}
-#converter.optimizations = []
+converter.optimizations = []
 tflite_model = converter.convert()
 open("mnist_model.tflite", "wb").write(tflite_model)
