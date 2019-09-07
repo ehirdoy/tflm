@@ -58,7 +58,7 @@ int _main(int argc, char* argv[]) {
   // Create an area of memory to use for input, output, and intermediate arrays.
   // Finding the minimum value for your model may require some trial and error.
   const int tensor_arena_size = 6 * 1024;
-  uint8_t tensor_arena[tensor_arena_size];
+  static uint8_t tensor_arena[tensor_arena_size];
 
   // Build an interpreter to run the model with
   tflite::MicroInterpreter interpreter(model, resolver, tensor_arena,
