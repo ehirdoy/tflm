@@ -90,9 +90,15 @@ int _main(int argc, char* argv[]) {
     input->data.f[0] = x_val;
 
     for (int i = 0; i < (28 * 28); i++) {
-      input->data.f[i] = input_data[i];
+#ifdef ESP_PLATFORM
+      float val = (unsigned char)argv[0][i] / 255.0;
+#else
+      float val = input_data[i];
+#endif
+
+      input->data.f[i] = val;
       // dump bitmap
-      printf("%s%s", (input_data[i] ? "." : " "), ((i % 28) == 27 ? "\n" : ""));
+      printf("%s%s", (val ? "." : " "), ((i % 28) == 27 ? "\n" : ""));
     }
 
     // Run inference, and report any error
@@ -121,7 +127,7 @@ int _main(int argc, char* argv[]) {
 }
 
 #ifdef ESP_PLATFORM
-extern "C" void tflm(void) {_main(0, NULL);}
+extern "C" void tflm(unsigned char *d) { _main(0, (char **)&d);}
 #else
 int main(int argc, char* argv[]) {_main(0, NULL);}
 #endif
