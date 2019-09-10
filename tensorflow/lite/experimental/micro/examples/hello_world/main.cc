@@ -17,15 +17,14 @@ limitations under the License.
 
 #include "tensorflow/lite/experimental/micro/examples/hello_world/constants.h"
 #include "tensorflow/lite/experimental/micro/examples/hello_world/output_handler.h"
-#include "tensorflow/lite/experimental/micro/examples/hello_world/sine_model_data.h"
 #include "tensorflow/lite/experimental/micro/kernels/all_ops_resolver.h"
 #include "tensorflow/lite/experimental/micro/micro_error_reporter.h"
 #include "tensorflow/lite/experimental/micro/micro_interpreter.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 #include "tensorflow/lite/version.h"
-
+#ifndef ESP_PLATFORM
 #include "input_data.h" // digit '7' bitmap
-
+#endif
 extern const unsigned char mnist_model_tflite[];
 
 static void dump_tensor(TfLiteTensor *input)
@@ -73,57 +72,25 @@ int _main(int argc, char* argv[]) {
   dump_tensor(input);
   dump_tensor(output);
 
-  // Keep track of how many inferences we have performed
-  int inference_count = 0;
-
-  // Loop indefinitely
-  while (true) {
-    // Calculate an x value to feed into the model. We compare the current
-    // inference_count to the number of inferences per cycle to determine
-    // our position within the range of possible x values the model was
-    // trained on, and use this to calculate a value.
-    float position = static_cast<float>(inference_count) /
-                     static_cast<float>(kInferencesPerCycle);
-    float x_val = position * kXrange;
-
-    // Place our calculated x value in the model's input tensor
-    input->data.f[0] = x_val;
-
-    for (int i = 0; i < (28 * 28); i++) {
+  for (int i = 0; i < (28 * 28); i++) {
 #ifdef ESP_PLATFORM
-      float val = (unsigned char)argv[0][i] / 255.0;
+    float val = (unsigned char)argv[0][i] / 255.0;
 #else
-      float val = input_data[i];
+    float val = input_data[i];
 #endif
-
-      input->data.f[i] = val;
-      // dump bitmap
-      printf("%s%s", (val ? "." : " "), ((i % 28) == 27 ? "\n" : ""));
-    }
-
-    // Run inference, and report any error
-    TfLiteStatus invoke_status = interpreter.Invoke();
-    if (invoke_status != kTfLiteOk) {
-      error_reporter->Report("Invoke failed on x_val: %f\n",
-                             static_cast<double>(x_val));
-      continue;
-    }
-
-    for (int i = 0; i < 10; i++)
-      printf("%d: %f\n", i, output->data.f[i]);
-    return 0;
-    // Read the predicted y value from the model's output tensor
-    float y_val = output->data.f[0];
-
-    // Output the results. A custom HandleOutput function can be implemented
-    // for each supported hardware target.
-    HandleOutput(error_reporter, x_val, y_val);
-
-    // Increment the inference_counter, and reset it if we have reached
-    // the total number per cycle
-    inference_count += 1;
-    if (inference_count >= kInferencesPerCycle) inference_count = 0;
+    input->data.f[i] = val;
+    printf("%s%s", (val ? "." : " "), ((i % 28) == 27 ? "\n" : ""));
   }
+
+  // Run inference, and report any error
+  TfLiteStatus invoke_status = interpreter.Invoke();
+  if (invoke_status != kTfLiteOk) {
+    error_reporter->Report("Invoke failed\n");
+    return 0;
+  }
+  for (int i = 0; i < 10; i++)
+    printf("%d: %f\n", i, output->data.f[i]);
+  return 0;
 }
 
 #ifdef ESP_PLATFORM
