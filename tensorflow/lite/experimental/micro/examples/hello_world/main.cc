@@ -15,6 +15,10 @@ limitations under the License.
 
 #include <stdio.h>
 
+#ifndef ESP_PLATFORM
+#include <unistd.h>
+#endif
+
 #include "tensorflow/lite/experimental/micro/examples/hello_world/constants.h"
 #include "tensorflow/lite/experimental/micro/examples/hello_world/output_handler.h"
 #include "tensorflow/lite/experimental/micro/kernels/all_ops_resolver.h"
@@ -22,9 +26,7 @@ limitations under the License.
 #include "tensorflow/lite/experimental/micro/micro_interpreter.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 #include "tensorflow/lite/version.h"
-#ifndef ESP_PLATFORM
-#include "input_data.h" // digit '7' bitmap
-#endif
+
 extern const unsigned char mnist_model_tflite[];
 
 static void dump_tensor(TfLiteTensor *input)
@@ -71,6 +73,12 @@ int _main(int argc, char* argv[]) {
   TfLiteTensor* output = interpreter.output(0);
   dump_tensor(input);
   dump_tensor(output);
+
+#ifndef ESP_PLATFORM
+  unsigned char input_data[28 * 28];
+  size_t n = read(0, input_data, sizeof(input_data));
+  assert(n == (28 * 28));
+#endif
 
   for (int i = 0; i < (28 * 28); i++) {
 #ifdef ESP_PLATFORM

@@ -31,7 +31,3 @@ mnist_model_data.cc: train-mnist-tflite.py
 	sed -i '/^unsigned int/d' $@
 
 cc: mnist_model_data.cc
-
-# digit '7' bitmap 28 * 28
-input_data.h:
-	wget https://gist.github.com/neil-tan/0e032be578181ec0e3d9a47e1e24d011/raw/888d098683318d030b3c4f6f4b375a64e7ad0017/input_data.h
